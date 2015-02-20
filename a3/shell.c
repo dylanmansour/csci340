@@ -258,6 +258,10 @@ int execute( command_t* p_cmd ){
 	
 	int numOfCmds = pipeCount + 1;
 	
+	int child_process_status[numOfCmds];
+	int fds[numOfCmds][2];
+	pid_t cpid[numOfCmds];
+	
 	if(pipeCount > 0){
 		
 		command_t p_cmd_array[numOfCmds];
@@ -296,8 +300,31 @@ int execute( command_t* p_cmd ){
 		}
 		
 		
-		for(i = 0; i < numOfCmds; i ++){
-			printf("New CMD Name: %s\n", p_cmd_array[i].name);
+		for(i = 0; i < numOfCmds - 1; i ++){
+			
+			pipe( fds[i] );
+			
+			if ( (cpid[i] = fork()) == 0 ) {
+				close(1); /* close normal stdout */
+				dup( fds[i][1] ); /* make stdout same as fds[1] */
+				close( fds[i][0] ); /* we don’t need this */
+				execv(p_cmd_array[i].name, p_cmd_array[i].argv);
+			}
+			
+			if ( (cpid[i + 1] = fork()) == 0 ) {
+				close(0); /* close normal stdin */
+				dup( fds[i][0] ); /* make stdin same as fds[0] */
+				close( fds[i][1] ); /* we don’t need this */
+				execv(p_cmd_array[i + 1].name, p_cmd_array[i + 1].argv);
+			}
+			
+			close( fds[i][0] );
+			close( fds[i][1] );
+			
+		}
+		
+		for (i = 0; i < numOfCmds; i ++){
+			waitpid( cpid[i], &child_process_status[i], 0 );
 		}
 		
 		printf("Number of pipes: %d\n", pipeCount);

@@ -254,71 +254,7 @@ int execute( command_t* p_cmd ){
 	char fullpath[255];
 	int status;
 	
-	int pipeCount = number_of_element_in_array(p_cmd->argv, "|");
 	
-	int numOfCmds = pipeCount + 1;
-	
-	if(pipeCount > 0){
-		
-		command_t p_cmd_array[numOfCmds];
-		
-		currentCmd = 0;
-		start_pos = 0;
-		
-		while(currentCmd != numOfCmds){
-			
-			newLineLength = 0;
-			posOfNextPipe = pos_of_element_in_argv(p_cmd, "|", start_pos);
-			
-			if(posOfNextPipe == start_pos){
-				printf("Command is not valid.\n");
-				return 0;
-			}
-			
-			for(j = start_pos; j < posOfNextPipe; j++)
-				newLineLength += string_length(p_cmd->argv[j]);
-			
-			char newLine[newLineLength + j + 1]; //length of all elements plus spaces in between
-			newLine[0] = '\0';
-			
-			//build the new line
-			for(j = start_pos; j < posOfNextPipe; j++){
-				string_concat(newLine, p_cmd->argv[j], newLine);
-				if(j != posOfNextPipe - 1)
-				string_concat(newLine, " ", newLine); //add a space if not the last part
-			}
-			newLine[newLineLength + j] = '\0';
-			
-			parse(newLine, &p_cmd_array[currentCmd]);
-			
-			start_pos = posOfNextPipe + 1;
-			currentCmd++;
-		}
-		
-		
-		for(i = 0; i < numOfCmds; i ++){
-			printf("New CMD Name: %s\n", p_cmd_array[i].name);
-		}
-		
-		printf("Number of pipes: %d\n", pipeCount);
-	}else{
-	
-	
-
-
-
-		fnd = find_fullpath( fullpath, p_cmd );
-			
-		if ( fnd ) {
-			if ( fork() == 0 ) {
-				execv( fullpath, p_cmd->argv );
-			}
-			wait( &status );
-		} else {
-			printf("Command not found.\n");
-			return 0;
-		}
-	}
 	
 	return 1;
 }
