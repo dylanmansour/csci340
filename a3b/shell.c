@@ -250,11 +250,126 @@ int string_length(char* str){
 
 int execute( command_t* p_cmd ){
 
-	int fnd = FALSE, i, currentCmd, start_pos, posOfNextPipe, newLineLength, j;
-	char fullpath[255];
+	int fnd1 = FALSE, fnd2 = FALSE, i, currentCmd, start_pos, posOfNextPipe, newLineLength, j;
+	char fullpath1[255];
+	char fullpath2[255];
 	int status;
 	
+	int pipeCount = number_of_element_in_array(p_cmd->argv, "|");
 	
+	int numOfCmds = pipeCount + 1;
+	
+	
+	//only handles 1 pipe!!!
+	int child_process_status;
+	int fds[2];
+	pid_t cpid1, cpid2;
+	
+	if(pipeCount == 1){
+		
+		command_t p_cmd_array[numOfCmds];
+		
+		currentCmd = 0;
+		start_pos = 0;
+		
+		while(currentCmd != numOfCmds){
+			
+			newLineLength = 0;
+			posOfNextPipe = pos_of_element_in_argv(p_cmd, "|", start_pos);
+			
+			if(posOfNextPipe == start_pos){
+				printf("Command is not valid.\n");
+				return 0;
+			}
+			
+			for(j = start_pos; j < posOfNextPipe; j++)
+				newLineLength += string_length(p_cmd->argv[j]);
+			
+			char newLine[newLineLength + j + 1]; //length of all elements plus spaces in between
+			newLine[0] = '\0';
+			
+			//build the new line
+			for(j = start_pos; j < posOfNextPipe; j++){
+				string_concat(newLine, p_cmd->argv[j], newLine);
+				if(j != posOfNextPipe - 1)
+				string_concat(newLine, " ", newLine); //add a space if not the last part
+			}
+			newLine[newLineLength + j] = '\0';
+			
+			parse(newLine, &p_cmd_array[currentCmd]);
+			
+			start_pos = posOfNextPipe + 1;
+			currentCmd++;
+		}
+		
+		
+		//only handles 1 pipe!!!
+		
+		pipe( fds );
+		if ( (cpid1 = fork()) == 0 ) {
+			close(1); /* close normal stdout */
+			dup( fds[1] ); /* make stdout same as fds[1] */
+			close( fds[0] ); /* we don’t need this */
+			
+			fnd1 = find_fullpath( fullpath1, &p_cmd_array[0] );
+			
+			if ( fnd1 ) {
+				if ( fork() == 0 ) {
+					execv( fullpath1, p_cmd_array[0].argv );
+				}
+			} else {
+				printf("Command \"%s\" found.\n", p_cmd_array[0].name);
+				return 0;
+			}
+		}
+		if ( (cpid2 = fork()) == 0 ) {
+			close(0); /* close normal stdin */
+			dup( fds[0] ); /* make stdin same as fds[0] */
+			close( fds[1] ); /* we don’t need this */
+			
+			fnd2 = find_fullpath( fullpath2, &p_cmd_array[1] );
+			
+			if ( fnd2 ) {
+				if ( fork() == 0 ) {
+					execv( fullpath2, p_cmd_array[1].argv );
+				}
+			} else {
+				printf("Command \"%s\" found.\n", p_cmd_array[1].name);
+				return 0;
+			}
+		}
+		
+		close( fds[0] );
+		close( fds[1] );
+		
+		waitpid( cpid1, &child_process_status, 0 );
+		waitpid( cpid2, &child_process_status, 0 );
+		
+		for(i = 0; i < numOfCmds; i++){
+			cleanup(&p_cmd_array[i]);
+		}
+		
+		return 0;
+		
+		
+	}else{
+	
+	
+
+
+
+		fnd1 = find_fullpath( fullpath1, p_cmd );
+			
+		if ( fnd1 ) {
+			if ( fork() == 0 ) {
+				execv( fullpath1, p_cmd->argv );
+			}
+			wait( &status );
+		} else {
+			printf("Command not found.\n");
+			return 0;
+		}
+	}
 	
 	return 1;
 }
