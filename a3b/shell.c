@@ -163,13 +163,36 @@ int is_builtin( command_t* p_cmd ){
 	return 0;
 }
 
+void trim(char* string){
+	int length = string_length(string), i, newLength, posOfFirstNonSpace;
+	
+	for(i = length - 1; i >= 0; i--){
+		if(string[i] != ' ' && string[i] != '\0'){
+			string[i + 1] = '\0';
+			break;
+		}
+	}
+	
+	newLength = string_length(string);
+	
+	for(i = 0; i < newLength; i++){
+		if(string[i] != ' ' && string[i] != '\0'){
+			posOfFirstNonSpace = i;
+			break;
+		}
+	}
+	
+	copy_string_part(string, string, posOfFirstNonSpace, newLength);
+		
+}
+
 void parse( char* line, command_t* p_cmd ){
 
 	//declare vars
 	int i, partCount, start_pos, pos_of_next_space, length_of_part;
 	
-	//remove the line break at the end of the line
-	//line[string_length(line) - 1] = '\0';
+	//trim white space
+	trim(line);
 
 	//get the number of of spaces and add one, this is the number of parts
 	partCount = number_of_needle_in_hey_stack(line, ' ') + 1;
@@ -304,8 +327,9 @@ int execute( command_t* p_cmd ){
 		
 		
 		//only handles 1 pipe!!!
-		
+		printf("hello\n");
 		pipe( fds );
+
 		if ( (cpid1 = fork()) == 0 ) {
 			close(1); /* close normal stdout */
 			dup( fds[1] ); /* make stdout same as fds[1] */
@@ -314,12 +338,11 @@ int execute( command_t* p_cmd ){
 			fnd1 = find_fullpath( fullpath1, &p_cmd_array[0] );
 			
 			if ( fnd1 ) {
-				if ( fork() == 0 ) {
+				if ( (cpid1 = fork()) == 0 ) {
 					execv( fullpath1, p_cmd_array[0].argv );
 				}
 			} else {
 				printf("Command \"%s\" found.\n", p_cmd_array[0].name);
-				return 0;
 			}
 		}
 		if ( (cpid2 = fork()) == 0 ) {
@@ -330,12 +353,11 @@ int execute( command_t* p_cmd ){
 			fnd2 = find_fullpath( fullpath2, &p_cmd_array[1] );
 			
 			if ( fnd2 ) {
-				if ( fork() == 0 ) {
+				if ( (cpid2 = fork()) == 0 ) {
 					execv( fullpath2, p_cmd_array[1].argv );
 				}
 			} else {
 				printf("Command \"%s\" found.\n", p_cmd_array[1].name);
-				return 0;
 			}
 		}
 		
@@ -349,6 +371,7 @@ int execute( command_t* p_cmd ){
 			cleanup(&p_cmd_array[i]);
 		}
 		
+		//done
 		return 0;
 		
 		

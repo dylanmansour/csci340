@@ -189,3 +189,5 @@ int strings_equal(const char* a, const char* b);
 int number_of_element_in_array(char** arr, char* element);
 
 int pos_of_element_in_argv(command_t* p_cmd, char* element, int start_pos);
+
+void trim(char* string);
