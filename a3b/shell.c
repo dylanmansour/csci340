@@ -273,7 +273,7 @@ int string_length(char* str){
 
 int execute( command_t* p_cmd ){
 
-	int fnd1 = FALSE, fnd2 = FALSE, i, currentCmd, start_pos, posOfNextPipe, newLineLength, j;
+	int fnd1 = FALSE, fnd2 = FALSE, i, currentCmd, start_pos, posOfNextPipe, newLineLength, j, r, t;
 	char fullpath1[255];
 	char fullpath2[255];
 	int status;
@@ -327,7 +327,6 @@ int execute( command_t* p_cmd ){
 		
 		
 		//only handles 1 pipe!!!
-		printf("hello\n");
 		pipe( fds );
 
 		if ( (cpid1 = fork()) == 0 ) {
@@ -343,8 +342,10 @@ int execute( command_t* p_cmd ){
 				}
 			} else {
 				printf("Command \"%s\" found.\n", p_cmd_array[0].name);
+				return 1;
 			}
 		}
+
 		if ( (cpid2 = fork()) == 0 ) {
 			close(0); /* close normal stdin */
 			dup( fds[0] ); /* make stdin same as fds[0] */
@@ -358,6 +359,7 @@ int execute( command_t* p_cmd ){
 				}
 			} else {
 				printf("Command \"%s\" found.\n", p_cmd_array[1].name);
+				return 1;
 			}
 		}
 		
