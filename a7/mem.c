@@ -68,46 +68,37 @@ void insert_data(int start_index, unsigned int size, unsigned int duration){
 
 int first_and_next_fit(unsigned int size, unsigned int duration, int start_index){
 	
-	int probe_count = 0, probe_size, probe_index = start_index, count = 0;
+	int probe_count = 0, 
+		probe_size, 
+		probe_index = start_index, 
+		chunk_count = mem_fragment_count(mem_size),
+		i;
+				
+	for(i = 0; i < chunk_count; i++){
 	
-	while(1){
-	
-		probe_index = index_of_next_probe(probe_index);
 		
+		probe_index = index_of_next_probe(probe_index);
 		if(probe_index == -1)
 			return -1;
-		
 		probe_size = size_of_probe(probe_index);
 		
 		probe_count++;
-		
+				
 		if(probe_size >= size){
-			
 			insert_data(probe_index, size, duration);
-			
-			printf("index = %d, size = %d\n", probe_index, probe_size);
-			
-			printf("data_size = %d\n", size);
-			
-			//done
-			last_placement_position = probe_index;
 			return probe_count;
-			
-		}	
-		
-		printf("probe_count = %d\n", probe_count);
-		printf("\n");
-		
-		if(count++ == 10)
-			exit(1);
+		}
 	}
+	
+	return -1;
+
 }
 
 int best_fit(unsigned int size, unsigned int duration){
 	
 	int index_of_best_fit = index_of_next_probe(0), 
 		size_of_best_fit = size_of_probe(index_of_best_fit),
-		probe_count = size_of_best_fit,
+		probe_count = 1,
 		candidate_index = index_of_best_fit,
 		candidate_size,
 		chunk_count = mem_fragment_count(mem_size),
@@ -115,6 +106,7 @@ int best_fit(unsigned int size, unsigned int duration){
 		
 	if(size_of_best_fit < size){
 		index_of_best_fit = -1;
+		size_of_best_fit = -1;
 	}		
 	
 		
@@ -138,11 +130,13 @@ int best_fit(unsigned int size, unsigned int duration){
 		}
 	}
 	
-	if(index_of_best_fit > -1)
+	if(index_of_best_fit > -1){
+		insert_data(index_of_best_fit, size, duration);
 		return probe_count;
-	else
-		return 0;
-
+	}else{
+		return -1;
+	}
+	
 }
 
 /*
@@ -181,8 +175,6 @@ int mem_single_time_unit_transpired()
 			memory[i]--;
 	}
 	
-	printf("decrementing\n");
-	
 	return 0;
 }
 
@@ -198,10 +190,12 @@ int mem_fragment_count(int frag_size)
 	for(i = 0; i < mem_size; i++){
 		if(memory[i] == 0){
 			length = 0;
-			j = i;
-			while(memory[j] == 0){
-				length++;
-				j++;
+			
+			for(j = i; j < mem_size; j++){
+				if(memory[j] != 0)
+					break;
+				else
+					length++;
 			}
 			
 			if(length <= frag_size)

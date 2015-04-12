@@ -45,24 +45,30 @@ int main(int argc, char** argv)
 		duration,
 		size,
 		result,
-		avg_probe = 0, 
-		fail_count = 0;
+		probe_count, 
+		fail_count,
+		frag_count;
 	
 	mem_init(size_memory);
 	
 	srand(seed);
 	
+	printf("Running, hang on...\n");
+	printf("Algorithm\tAvg Probes\tAvg Fails\tFragment Count\n");
+	printf("------------\t------------\t------------\t------------\n");
 	
-	for(type_run = 0; type_run < 1; type_run++){
+	for(type_run = 0; type_run < 3; type_run++){
 
 		mem_clear();
+		
+		probe_count = 0;
+		fail_count = 0;
+		frag_count = 0;
 
 		for(i = 0; i < num_runs; i++){
 
 			for(j = 0; j < time_steps; j++){
-			
-				printf("time_step = %d\n", j);
-				
+							
 				duration = (rand() % (MAX_DURATION - MIN_DURATION)) + MIN_DURATION;
 				size = (rand() % (MAX_REQUEST_SIZE - MIN_REQUEST_SIZE)) + MIN_REQUEST_SIZE;
 		
@@ -76,14 +82,23 @@ int main(int argc, char** argv)
 				}
 							
 				if(result >= 0)
-					avg_probe += result;
+					probe_count += result;
 				else
 					fail_count++;
 			
 				mem_single_time_unit_transpired();
 			}
 			
-			
+			frag_count += mem_fragment_count(MIN_REQUEST_SIZE);
+		}
+		
+		switch(type_run){
+			case 0: printf("First Fit\t %.2f\t%.2f\t%.2f\n", probe_count / (double)num_runs, fail_count / (double)num_runs, frag_count / (double)num_runs);
+				break;
+			case 1: printf("Next Fit\t %.2f\t%.2f\t%.2f\n", probe_count / (double)num_runs, fail_count / (double)num_runs, frag_count / (double)num_runs);
+				break;
+			case 2: printf("Best Fit\t %.2f\t%.2f\t%.2f\n", probe_count / (double)num_runs, fail_count / (double)num_runs, frag_count / (double)num_runs);
+				break;
 		}
 	}
 	
